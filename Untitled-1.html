@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>App Qualidade</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f4f4f4; color: #333; }
+    header { background: #6200ea; color: white; padding: 14px 20px; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; }
+    header button { background: rgba(255,255,255,0.2); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    nav { display: flex; background: #fff; border-bottom: 2px solid #6200ea; overflow-x: auto; }
+    nav button { flex: 1; min-width: 80px; padding: 10px 6px; border: none; background: none; cursor: pointer; font-size: 11px; color: #666; white-space: nowrap; }
+    nav button.ativo { color: #6200ea; font-weight: bold; border-bottom: 3px solid #6200ea; }
+    .tela { display: none; padding: 14px; }
+    .tela.ativa { display: block; }
+    h2 { margin-bottom: 14px; color: #6200ea; font-size: 16px; }
+    input[type="text"], input[type="date"], input[type="time"], select, textarea { width: 100%; padding: 7px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+    button.salvar { background: #6200ea; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .card { background: white; border-radius: 8px; padding: 12px; margin-top: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+    .badge.aberta { background: #fce4ec; color: #c62828; }
+    .badge.resolvida { background: #e8f5e9; color: #2e7d32; }
+    .prioridade { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 4px; }
+    .prioridade.alta { background: #ffebee; color: #b71c1c; }
+    .prioridade.media { background: #fff8e1; color: #f57f17; }
+    .prioridade.baixa { background: #e8f5e9; color: #1b5e20; }
+    .card.borda-alta { border-left: 4px solid #b71c1c; }
+    .card.borda-media { border-left: 4px solid #f57f17; }
+    .card.borda-baixa { border-left: 4px solid #2e7d32; }
+    .btn-fechar { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; }
+    .btn-fechar:disabled { opacity: 0.4; cursor: default; }
+    .assinatura-box { margin-top: 8px; background: #f9f9f9; border: 1px dashed #ccc; border-radius: 6px; padding: 8px; }
+    .assinatura-box button { background: #333; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+    .assinatura-registrada { font-size: 11px; color: #2e7d32; margin-top: 4px; font-style: italic; }
+    .checklist-item { display: flex; align-items: center; gap: 10px; background: white; padding: 10px; border-radius: 6px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .checklist-item input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
+    .checklist-item.ok label { text-decoration: line-through; color: #aaa; }
+
+    /* Tela Inicial */
+    #tela-inicial { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 56px); padding: 20px; background: #f4f4f4; }
+    .boas-vindas { text-align: center; margin-bottom: 24px; }
+    .boas-vindas h1 { color: #6200ea; font-size: 22px; margin-bottom: 6px; }
+    .boas-vindas p { color: #777; font-size: 14px; }
+    .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 480px; }
+    .menu-btn { background: white; border: none; border-radius: 12px; padding: 16px 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.15s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .menu-btn:hover { transform: translateY(-2px); }
+    .menu-btn .icone { font-size: 28px; }
+    .menu-btn .menu-label { font-size: 12px; font-weight: bold; color: #333; text-align: center; }
+    .menu-btn .menu-desc { font-size: 10px; color: #999; text-align: center; }
+    .menu-btn.nc { border-top: 4px solid #c62828; }
+    .menu-btn.check { border-top: 4px solid #1565c0; }
+    .menu-btn.sal { border-top: 4px solid #2e7d32; }
+    .menu-btn.mp { border-top: 4px solid #e65100; }
+    .menu-btn.emb { border-top: 4px solid #1565c0; }
+    .menu-btn.nce { border-top: 4px solid #c62828; }
+    .menu-btn.dash { border-top: 4px solid #6200ea; }
+
+    /* Dashboard */
+    .dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .dash-card { background: white; border-radius: 10px; padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .dash-card .numero { font-size: 28px; font-weight: bold; }
+    .dash-card .label { font-size: 10px; color: #888; margin-top: 3px; }
+    .dash-card.total .numero { color: #6200ea; }
+    .dash-card.aberto .numero { color: #c62828; }
+    .dash-card.resolvido .numero { color: #2e7d32; }
+    .dash-card.sal .numero { color: #2e7d32; }
+    .dash-card.mp .numero { color: #e65100; }
+    .dash-card.emb .numero { color: #1565c0; }
+    .grafico-titulo { font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; }
+    .barra-wrap { margin-bottom: 6px; }
+    .barra-label { font-size: 11px; color: #555; margin-bottom: 2px; display: flex; justify-content: space-between; }
+    .barra-bg { background: #eee; border-radius: 6px; height: 16px; overflow: hidden; }
+    .barra-fill { height: 16px; border-radius: 6px; background: #6200ea; transition: width 0.4s; }
+
+    /* Forms */
+    .form-box { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .secao { background: #6200ea; color: white; text-align: center; padding: 7px; font-weight: bold; font-size: 11px; margin: 14px -16px; letter-spacing: 1px; }
+    .campo-label { font-size: 11px; color: #555; font-weight: bold; margin-bottom: 2px; margin-top: 6px; }
+    .row { display: grid; gap: 8px; }
+    .col2 { grid-template-columns: 1fr 1fr; }
+    .col3 { grid-template-columns: 1fr 1fr 1fr; }
+    .col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .radio-group { display: flex; gap: 10px; align-items: center; padding: 4px 0; font-size: 12px; flex-wrap: wrap; }
+    .radio-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+    .radio-group input[type="radio"] { width: auto; margin: 0; }
+    .prod-row { border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-bottom: 8px; background: #fafafa; }
+    .prod-titulo { font-size: 11px; font-weight: bold; color: #6200ea; margin-bottom: 6px; }
+    .especificar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+    .especificar-row span { font-size: 11px; min-width: 200px; }
+    .especificar-row input[type="text"] { flex: 1; min-width: 100px; margin: 0; }
+    .btn-novo { color: white; border: none; padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; margin-bottom: 14px; }
+    .btn-salvar-form { color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; margin-top: 14px; }
+    .btn-cancelar { width: 100%; margin-top: 6px; padding: 9px; border: none; border-radius: 8px; background: #f5f5f5; cursor: pointer; font-size: 13px; color: #555; }
+    .rec-card { background: white; border-radius: 8px; padding: 12px; margin-top: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .rec-card.sal { border-left: 4px solid #2e7d32; }
+    .rec-card.mp { border-left: 4px solid #e65100; }
+    .rec-card.emb { border-left: 4px solid #1565c0; }
+    .rec-card.nc-emb { border-left: 4px solid #c62828; }
+    .rec-card strong { font-size: 13px; }
+    .rec-card p { font-size: 11px; color: #777; margin-top: 2px; }
+    .doc-vazio { text-align: center; color: #aaa; font-size: 13px; margin-top: 30px; }
+    .mp-linha { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 8px; background: #fafafa; }
+    .mp-linha-titulo { font-size: 11px; font-weight: bold; color: #e65100; margin-bottom: 6px; }
+    .mp-check-row { display: flex; align-items: center; gap: 5px; font-size: 11px; margin-bottom: 3px; flex-wrap: wrap; }
+    .mp-check-row label { display: flex; align-items: center; gap: 2px; cursor: pointer; }
+    .mp-check-row input[type="radio"] { width: auto; margin: 0; }
+
+    /* Embalagem Primária */
+    .emb-linha { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 8px; background: #fafafa; }
+    .emb-linha-titulo { font-size: 11px; font-weight: bold; color: #1565c0; margin-bottom: 6px; }
+    .cn-group { display: flex; gap: 8px; font-size: 11px; }
+    .cn-group label { display: flex; align-items: center; gap: 2px; cursor: pointer; }
+    .cn-group input[type="radio"] { width: auto; margin: 0; }
+
+    /* NC Ocorrência */
+    .ocorrencia-card { background: white; border-left: 4px solid #c62828; border-radius: 8px; padding: 12px; margin-top: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .num-ocorrencia { display: inline-block; background: #c62828; color: white; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+<!-- TELA INICIAL -->
+<div id="tela-inicial">
+  <div class="boas-vindas">
+    <h1>📋 App Qualidade</h1>
+    <p>O que você vai fazer hoje?</p>
+  </div>
+  <div class="menu-grid">
+    <button class="menu-btn nc" onclick="irPara('nc',1)"><span class="icone">🚨</span><span class="menu-label">Não Conformidade</span><span class="menu-desc">Registrar chamado</span></button>
+    <button class="menu-btn check" onclick="irPara('checklist',2)"><span class="icone">✅</span><span class="menu-label">Checklist</span><span class="menu-desc">Inspeção</span></button>
+    <button class="menu-btn sal" onclick="irPara('sal',3)"><span class="icone">🧂</span><span class="menu-label">Recebimento Sal</span><span class="menu-desc">Controle</span></button>
+    <button class="menu-btn mp" onclick="irPara('mp',4)"><span class="icone">🥩</span><span class="menu-label">Recebimento MP</span><span class="menu-desc">Matéria Prima</span></button>
+    <button class="menu-btn emb" onclick="irPara('emb',5)"><span class="icone">📦</span><span class="menu-label">Embalagem Primária</span><span class="menu-desc">Controle 19-A</span></button>
+    <button class="menu-btn nce" onclick="irPara('nce',6)"><span class="icone">⚠️</span><span class="menu-label">NC Embalagem</span><span class="menu-desc">Ocorrências 19-A</span></button>
+    <button class="menu-btn dash" onclick="irPara('dashboard',0)" style="grid-column:span 2;"><span class="icone">📊</span><span class="menu-label">Dashboard</span><span class="menu-desc">Resumo geral</span></button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <header>
+    <span>📋 App Qualidade</span>
+    <button onclick="voltarInicio()">⬅ Início</button>
+  </header>
+  <nav>
+    <button onclick="mostrar('dashboard',0)">📊</button>
+    <button onclick="mostrar('nc',1)">🚨 NC</button>
+    <button onclick="mostrar('checklist',2)">✅</button>
+    <button onclick="mostrar('sal',3)">🧂 Sal</button>
+    <button onclick="mostrar('mp',4)">🥩 MP</button>
+    <button onclick="mostrar('emb',5)">📦 Emb</button>
+    <button onclick="mostrar('nce',6)">⚠️ NC Emb</button>
+  </nav>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="tela">
+    <h2>📊 Dashboard</h2>
+    <div class="dash-cards">
+      <div class="dash-card total"><div class="numero" id="d-total">0</div><div class="label">Total NC</div></div>
+      <div class="dash-card aberto"><div class="numero" id="d-abertos">0</div><div class="label">NC Abertas</div></div>
+      <div class="dash-card resolvido"><div class="numero" id="d-resolvidos">0</div><div class="label">NC Resolvidas</div></div>
+      <div class="dash-card sal"><div class="numero" id="d-sal">0</div><div class="label">Rec. Sal</div></div>
+      <div class="dash-card mp"><div class="numero" id="d-mp">0</div><div class="label">Rec. MP</div></div>
+      <div class="dash-card emb"><div class="numero" id="d-emb">0</div><div class="label">Embalagens</div></div>
+    </div>
+    <div class="grafico-titulo">Chamados por setor</div>
+    <div id="grafico-setores"></div>
+  </div>
+
+  <!-- NÃO CONFORMIDADES -->
+  <div id="nc" class="tela">
+    <h2>Registrar Não Conformidade</h2>
+    <input type="text" id="nc-titulo" placeholder="Título">
+    <select id="nc-setor">
+      <option value="">Selecione o setor</option>
+      <option>Agranel</option><option>Pacotinho</option><option>Desossa</option>
+      <option>Salga</option><option>Expedição</option><option>Estoque</option>
+    </select>
+    <select id="nc-prioridade">
+      <option value="">Prioridade</option>
+      <option value="alta">🔴 Alta</option>
+      <option value="media">🟡 Média</option>
+      <option value="baixa">🟢 Baixa</option>
+    </select>
+    <textarea id="nc-descricao" rows="3" placeholder="Descreva o problema..."></textarea>
+    <button class="salvar" onclick="salvarNC()">Registrar</button>
+    <div id="lista-nc"></div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div id="checklist" class="tela">
+    <h2>Checklist de Inspeção</h2>
+    <div class="checklist-item" id="item-1"><input type="checkbox" onchange="marcar('item-1')"><label>EPI's sendo utilizados corretamente</label></div>
+    <div class="checklist-item" id="item-2"><input type="checkbox" onchange="marcar('item-2')"><label>Área de trabalho limpa e organizada</label></div>
+    <div class="checklist-item" id="item-3"><input type="checkbox" onchange="marcar('item-3')"><label>Equipamentos calibrados e em bom estado</label></div>
+    <div class="checklist-item" id="item-4"><input type="checkbox" onchange="marcar('item-4')"><label>Documentos de processo disponíveis</label></div>
+    <div class="checklist-item" id="item-5"><input type="checkbox" onchange="marcar('item-5')"><label>Inspeção visual do produto realizada</label></div>
+    <br>
+    <button class="salvar" onclick="finalizarChecklist()">Finalizar</button>
+    <p id="resultado-checklist" style="margin-top:10px; font-weight:bold;"></p>
+  </div>
+
+  <!-- RECEBIMENTO SAL -->
+  <div id="sal" class="tela">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2>🧂 Recebimento de Sal</h2>
+      <button class="btn-novo" style="background:#2e7d32;" onclick="toggleForm('form-sal')">+ Novo</button>
+    </div>
+    <div id="form-sal" style="display:none;">
+      <div class="form-box">
+        <div class="secao">INFORMAÇÕES DO DESCARREGAMENTO</div>
+        <div class="campo-label">Fornecedor</div><input type="text" id="sal-fornecedor" placeholder="Fornecedor">
+        <div class="row col2">
+          <div><div class="campo-label">Data</div><input type="date" id="sal-data"></div>
+          <div><div class="campo-label">Placa</div><input type="text" id="sal-placa"></div>
+        </div>
+        <div class="row col2">
+          <div><div class="campo-label">Nota Fiscal</div><input type="text" id="sal-nf"></div>
+          <div><div class="campo-label">Órgãos Fiscalizadores</div><input type="text" id="sal-orgaos"></div>
+        </div>
+        <div class="secao">PRODUTOS</div>
+        <div class="prod-row">
+          <div class="prod-titulo">PRODUTO 1</div>
+          <div class="row col2"><div><div class="campo-label">Produto</div><input type="text" id="sal-p1-nome"></div><div><div class="campo-label">Lote</div><input type="text" id="sal-p1-lote"></div></div>
+          <div class="row col2"><div><div class="campo-label">Peso (kg)</div><input type="text" id="sal-p1-peso"></div><div><div class="campo-label">Unidades</div><input type="text" id="sal-p1-unid"></div></div>
+          <div class="campo-label">Laudo</div>
+          <div class="radio-group"><label><input type="radio" name="sal-p1-laudo" value="C"> C</label><label><input type="radio" name="sal-p1-laudo" value="NC"> NC</label><label><input type="radio" name="sal-p1-laudo" value="NA"> NA</label></div>
+        </div>
+        <div class="prod-row">
+          <div class="prod-titulo">PRODUTO 2</div>
+          <div class="row col2"><div><div class="campo-label">Produto</div><input type="text" id="sal-p2-nome"></div><div><div class="campo-label">Lote</div><input type="text" id="sal-p2-lote"></div></div>
+          <div class="row col2"><div><div class="campo-label">Peso (kg)</div><input type="text" id="sal-p2-peso"></div><div><div class="campo-label">Unidades</div><input type="text" id="sal-p2-unid"></div></div>
+          <div class="campo-label">Laudo</div>
+          <div class="radio-group"><label><input type="radio" name="sal-p2-laudo" value="C"> C</label><label><input type="radio" name="sal-p2-laudo" value="NC"> NC</label><label><input type="radio" name="sal-p2-laudo" value="NA"> NA</label></div>
+        </div>
+        <div class="secao">CONDIÇÕES DO BAÚ</div>
+        <div class="especificar-row"><span>Presença de odor?</span><div class="radio-group"><label><input type="radio" name="sal-odor" value="C"> C</label><label><input type="radio" name="sal-odor" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Evidência de pragas?</span><div class="radio-group"><label><input type="radio" name="sal-pragas" value="C"> C</label><label><input type="radio" name="sal-pragas" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Contaminantes?</span><div class="radio-group"><label><input type="radio" name="sal-contam" value="C"> C</label><label><input type="radio" name="sal-contam" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Sujidades no piso/paredes?</span><div class="radio-group"><label><input type="radio" name="sal-sujid" value="C"> C</label><label><input type="radio" name="sal-sujid" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Descontinuidade no piso/paredes?</span><div class="radio-group"><label><input type="radio" name="sal-descont" value="C"> C</label><label><input type="radio" name="sal-descont" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="secao">ASSINATURAS</div>
+        <textarea id="sal-obs" rows="2" placeholder="Observações..."></textarea>
+        <div class="row col2">
+          <div><div class="campo-label">Responsável Recebimento</div><input type="text" id="sal-assin1"></div>
+          <div><div class="campo-label">Supervisor Qualidade</div><input type="text" id="sal-assin2"></div>
+        </div>
+        <button class="btn-salvar-form" style="background:#2e7d32;" onclick="salvarSal()">💾 Salvar</button>
+        <button class="btn-cancelar" onclick="toggleForm('form-sal')">Cancelar</button>
+      </div>
+    </div>
+    <div id="lista-sal"><div class="doc-vazio" id="sal-vazio">Nenhum recebimento registrado.</div></div>
+  </div>
+
+  <!-- RECEBIMENTO MP -->
+  <div id="mp" class="tela">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2>🥩 Recebimento Matéria Prima</h2>
+      <button class="btn-novo" style="background:#e65100;" onclick="toggleForm('form-mp')">+ Novo</button>
+    </div>
+    <div id="form-mp" style="display:none;">
+      <div class="form-box">
+        <div class="secao">DESCARREGAMENTO</div>
+        <div class="row col2"><div><div class="campo-label">Data Recebimento</div><input type="date" id="mp-data-rec"></div><div><div class="campo-label">Nº Nota Fiscal</div><input type="text" id="mp-nf"></div></div>
+        <div class="row col2"><div><div class="campo-label">Data Descarga</div><input type="date" id="mp-data-desc"></div><div><div class="campo-label">Placa</div><input type="text" id="mp-placa"></div></div>
+        <div class="row col2"><div><div class="campo-label">Cidade/Estado</div><input type="text" id="mp-cidade"></div><div><div class="campo-label">Lacre</div><input type="text" id="mp-lacre"></div></div>
+        <div class="row col2"><div><div class="campo-label">Fornecedor</div><input type="text" id="mp-fornecedor"></div><div><div class="campo-label">SIF/SISBI Origem</div><input type="text" id="mp-sif"></div></div>
+        <div class="row col2"><div><div class="campo-label">Nº Certificado</div><input type="text" id="mp-cert"></div><div><div class="campo-label">Peso Líquido (kg)</div><input type="text" id="mp-peso-liq"></div></div>
+        <div class="secao">MATÉRIAS PRIMAS (até 4 itens)</div>
+        <div id="mp-linhas"></div>
+        <div class="secao">CONDIÇÕES DO BAÚ</div>
+        <div class="especificar-row"><span>Presença de odor?</span><div class="radio-group"><label><input type="radio" name="mp-odor" value="C"> C</label><label><input type="radio" name="mp-odor" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Evidência de pragas?</span><div class="radio-group"><label><input type="radio" name="mp-pragas" value="C"> C</label><label><input type="radio" name="mp-pragas" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Produtos incompatíveis?</span><div class="radio-group"><label><input type="radio" name="mp-incompat" value="C"> C</label><label><input type="radio" name="mp-incompat" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Sujidades no piso/paredes?</span><div class="radio-group"><label><input type="radio" name="mp-sujid" value="C"> C</label><label><input type="radio" name="mp-sujid" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="especificar-row"><span>Descontinuidade no piso/paredes?</span><div class="radio-group"><label><input type="radio" name="mp-descont" value="C"> C</label><label><input type="radio" name="mp-descont" value="NC"> NC</label></div><input type="text" placeholder="Especificar"></div>
+        <div class="secao">AVALIAÇÕES POR LINHA (até 8)</div>
+        <div id="mp-cond-linhas"></div>
+        <div class="secao">ASSINATURAS</div>
+        <textarea id="mp-obs" rows="2" placeholder="Observações..."></textarea>
+        <div class="row col2">
+          <div><div class="campo-label">Controle de Qualidade</div><input type="text" id="mp-assin1"></div>
+          <div><div class="campo-label">Supervisora de Qualidade</div><input type="text" id="mp-assin2"></div>
+        </div>
+        <button class="btn-salvar-form" style="background:#e65100;" onclick="salvarMP()">💾 Salvar</button>
+        <button class="btn-cancelar" onclick="toggleForm('form-mp')">Cancelar</button>
+      </div>
+    </div>
+    <div id="lista-mp"><div class="doc-vazio" id="mp-vazio">Nenhum recebimento registrado.</div></div>
+  </div>
+
+  <!-- EMBALAGEM PRIMÁRIA 19-A -->
+  <div id="emb" class="tela">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2>📦 Embalagem Primária — 19-A</h2>
+      <button class="btn-novo" style="background:#1565c0;" onclick="toggleForm('form-emb')">+ Novo Registro</button>
+    </div>
+    <div id="form-emb" style="display:none;">
+      <div class="form-box">
+        <div class="secao">DESCRIÇÃO DO PROCEDIMENTO</div>
+        <div class="row col2">
+          <div><div class="campo-label">PAINEIRA; FAB:</div><input type="text" id="emb-fab1" placeholder="FAB"></div>
+          <div><div class="campo-label">Validade</div><input type="date" id="emb-val1"></div>
+        </div>
+        <div class="row col2">
+          <div><div class="campo-label">MARCA PRÓPRIA; FAB:</div><input type="text" id="emb-fab2" placeholder="FAB"></div>
+          <div><div class="campo-label">Validade</div><input type="date" id="emb-val2"></div>
+        </div>
+
+        <div class="secao">REGISTROS POR HORA (até 12 linhas)</div>
+        <p style="font-size:11px; color:#888; margin-bottom:8px;">Preencha cada verificação horária</p>
+        <div id="emb-linhas"></div>
+
+        <div class="secao">ASSINATURAS</div>
+        <div class="row col2">
+          <div><div class="campo-label">Controle de Qualidade</div><input type="text" id="emb-assin1"></div>
+          <div><div class="campo-label">Supervisor Controle de Qualidade</div><input type="text" id="emb-assin2"></div>
+        </div>
+        <button class="btn-salvar-form" style="background:#1565c0;" onclick="salvarEmb()">💾 Salvar Registro</button>
+        <button class="btn-cancelar" onclick="toggleForm('form-emb')">Cancelar</button>
+      </div>
+    </div>
+    <div id="lista-emb"><div class="doc-vazio" id="emb-vazio">Nenhum registro de embalagem.</div></div>
+  </div>
+
+  <!-- NC EMBALAGEM 19-A -->
+  <div id="nce" class="tela">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2>⚠️ NC Embalagem — 19-A</h2>
+      <button class="btn-novo" style="background:#c62828;" onclick="toggleForm('form-nce')">+ Nova Ocorrência</button>
+    </div>
+    <div id="form-nce" style="display:none;">
+      <div class="form-box">
+        <div class="secao">REGISTRO DE NÃO CONFORMIDADE</div>
+        <div class="row col2">
+          <div><div class="campo-label">Data</div><input type="date" id="nce-data"></div>
+          <div><div class="campo-label">Hora</div><input type="time" id="nce-hora"></div>
+        </div>
+        <div class="campo-label">Não Conformidade</div>
+        <textarea id="nce-nc" rows="3" placeholder="Descreva a não conformidade encontrada..."></textarea>
+        <div class="campo-label">Ação Corretiva</div>
+        <textarea id="nce-acao" rows="3" placeholder="Descreva a ação corretiva tomada..."></textarea>
+        <div class="campo-label">Assinatura (Nome do responsável)</div>
+        <input type="text" id="nce-assin" placeholder="Nome completo">
+        <button class="btn-salvar-form" style="background:#c62828;" onclick="salvarNCE()">💾 Registrar Ocorrência</button>
+        <button class="btn-cancelar" onclick="toggleForm('form-nce')">Cancelar</button>
+      </div>
+    </div>
+    <div id="lista-nce"><div class="doc-vazio" id="nce-vazio">Nenhuma ocorrência registrada.</div></div>
+  </div>
+</div>
+
+<script>
+  let contadorNC = 0, chamados = [], totalSal = 0, totalMP = 0, totalEmb = 0, contadorOcorrencia = 0;
+
+  // Gerar linhas MP
+  function gerarLinhasMP() {
+    let html = '';
+    for(let i=1;i<=4;i++){
+      html += `<div class="mp-linha"><div class="mp-linha-titulo">ITEM ${i}</div>
+        <div class="row col2">
+          <div><div class="campo-label">Tipo de Matéria Prima</div><input type="text" id="mp-l${i}-tipo" placeholder="Ex: Carne bovina"></div>
+          <div><div class="campo-label">Produção</div><input type="date" id="mp-l${i}-prod"></div>
+        </div>
+        <div class="row col3">
+          <div><div class="campo-label">Validade</div><input type="date" id="mp-l${i}-val"></div>
+          <div><div class="campo-label">Volume</div><input type="text" id="mp-l${i}-vol"></div>
+          <div><div class="campo-label">Peso (kg)</div><input type="text" id="mp-l${i}-peso"></div>
+        </div>
+        <div class="campo-label">Lote Interno</div><input type="text" id="mp-l${i}-lote">
+      </div>`;
+    }
+    document.getElementById('mp-linhas').innerHTML = html;
+
+    let html2 = '';
+    for(let i=1;i<=8;i++){
+      html2 += `<div class="mp-linha"><div class="mp-linha-titulo">LINHA ${i}</div>
+        <div class="row col3">
+          <div>
+            <div class="campo-label">MP / T(°C) / pH</div>
+            <input type="text" id="mp-c${i}-mp" placeholder="MP">
+            <div class="mp-check-row"><span>Pos:</span><label><input type="radio" name="mp-c${i}-pos" value="I"> I</label><label><input type="radio" name="mp-c${i}-pos" value="M"> M</label><label><input type="radio" name="mp-c${i}-pos" value="F"> F</label><input type="text" id="mp-c${i}-temp" placeholder="T°C" style="width:55px;margin:0;"></div>
+            <input type="text" id="mp-c${i}-ph" placeholder="pH">
+          </div>
+          <div>
+            <div class="campo-label">Contaminação/Defeitos</div>
+            <div class="mp-check-row"><label><input type="radio" name="mp-c${i}-cont" value="Conforme"> Conforme</label><label><input type="radio" name="mp-c${i}-cont" value="N.Conf."> N.Conf.</label></div>
+            <div class="campo-label">Embalagem Primária</div>
+            <div class="mp-check-row"><label><input type="radio" name="mp-c${i}-embp" value="C"> C</label><label><input type="radio" name="mp-c${i}-embp" value="NC"> NC</label><label><input type="radio" name="mp-c${i}-embp" value="NA"> NA</label></div>
+            <div class="campo-label">Embalagem Secundária</div>
+            <div class="mp-check-row"><label><input type="radio" name="mp-c${i}-embs" value="C"> C</label><label><input type="radio" name="mp-c${i}-embs" value="NC"> NC</label><label><input type="radio" name="mp-c${i}-embs" value="NA"> NA</label></div>
+          </div>
+          <div>
+            <div class="campo-label">Sensorial</div>
+            <div class="mp-check-row"><label><input type="radio" name="mp-c${i}-sens" value="C"> C</label><label><input type="radio" name="mp-c${i}-sens" value="NC"> NC</label></div>
+            <div class="campo-label">Aprovado</div>
+            <div class="mp-check-row"><label><input type="radio" name="mp-c${i}-aprov" value="S"> S</label><label><input type="radio" name="mp-c${i}-aprov" value="N"> N</label></div>
+            <div class="campo-label">Destino</div>
+            <div class="mp-check-row"><label><input type="radio" name="mp-c${i}-dest" value="Câmara"> Câmara</label><label><input type="radio" name="mp-c${i}-dest" value="Desossa"> Desossa</label></div>
+          </div>
+        </div>
+      </div>`;
+    }
+    document.getElementById('mp-cond-linhas').innerHTML = html2;
+  }
+
+  // Gerar linhas Embalagem
+  function gerarLinhasEmb() {
+    let html = '';
+    for(let i=1;i<=12;i++){
+      html += `<div class="emb-linha"><div class="emb-linha-titulo">LINHA ${i}</div>
+        <div class="row col2">
+          <div><div class="campo-label">Hora</div><input type="time" id="emb-l${i}-hora"></div>
+          <div><div class="campo-label">Produto</div><input type="text" id="emb-l${i}-prod" placeholder="Produto"></div>
+        </div>
+        <div class="row col3">
+          <div><div class="campo-label">Lote</div><input type="text" id="emb-l${i}-lote" placeholder="Lote"></div>
+          <div><div class="campo-label">Selovac</div><input type="text" id="emb-l${i}-selv" placeholder="Selovac"></div>
+          <div><div class="campo-label">Temp. Vácuo</div><input type="text" id="emb-l${i}-temp" placeholder="Temp."></div>
+        </div>
+        <div class="campo-label">Peso</div>
+        <input type="text" id="emb-l${i}-peso" placeholder="Peso">
+        <div class="campo-label">Avaliações</div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:11px; margin-bottom:4px;">
+          <span>Peso: <span class="cn-group" style="display:inline-flex;gap:6px;"><label><input type="radio" name="emb-l${i}-peso-cn" value="C"> C</label><label><input type="radio" name="emb-l${i}-peso-cn" value="NC"> NC</label></span></span>
+          <span>Aparência: <span class="cn-group" style="display:inline-flex;gap:6px;"><label><input type="radio" name="emb-l${i}-ap" value="C"> C</label><label><input type="radio" name="emb-l${i}-ap" value="NC"> NC</label></span></span>
+          <span>Embalagem: <span class="cn-group" style="display:inline-flex;gap:6px;"><label><input type="radio" name="emb-l${i}-emb" value="C"> C</label><label><input type="radio" name="emb-l${i}-emb" value="NC"> NC</label></span></span>
+          <span>Shelf Life: <span class="cn-group" style="display:inline-flex;gap:6px;"><label><input type="radio" name="emb-l${i}-sl" value="C"> C</label><label><input type="radio" name="emb-l${i}-sl" value="NC"> NC</label></span></span>
+        </div>
+      </div>`;
+    }
+    document.getElementById('emb-linhas').innerHTML = html;
+  }
+
+  function irPara(tela, idx) {
+    document.getElementById('tela-inicial').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    mostrar(tela, idx);
+    if(tela === 'mp' && !document.getElementById('mp-linhas').innerHTML) gerarLinhasMP();
+    if(tela === 'emb' && !document.getElementById('emb-linhas').innerHTML) gerarLinhasEmb();
+  }
+
+  function voltarInicio() {
+    document.getElementById('tela-inicial').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  }
+
+  function mostrar(id, idx) {
+    document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('ativo'));
+    document.getElementById(id).classList.add('ativa');
+    document.querySelectorAll('nav button')[idx].classList.add('ativo');
+    if(id === 'dashboard') atualizarDashboard();
+    if(id === 'mp' && !document.getElementById('mp-linhas').innerHTML) gerarLinhasMP();
+    if(id === 'emb' && !document.getElementById('emb-linhas').innerHTML) gerarLinhasEmb();
+  }
+
+  function toggleForm(id) {
+    const f = document.getElementById(id);
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function atualizarDashboard() {
+    document.getElementById('d-total').textContent = chamados.length;
+    document.getElementById('d-abertos').textContent = chamados.filter(c=>c.status==='aberta').length;
+    document.getElementById('d-resolvidos').textContent = chamados.filter(c=>c.status==='resolvida').length;
+    document.getElementById('d-sal').textContent = totalSal;
+    document.getElementById('d-mp').textContent = totalMP;
+    document.getElementById('d-emb').textContent = totalEmb;
+    const setores = {};
+    chamados.forEach(c => { setores[c.setor] = (setores[c.setor]||0)+1; });
+    const max = Math.max(...Object.values(setores),1);
+    document.getElementById('grafico-setores').innerHTML = Object.keys(setores).length===0
+      ? '<p style="color:#aaa;font-size:12px;">Nenhum chamado registrado.</p>'
+      : Object.entries(setores).map(([s,q])=>`<div class="barra-wrap"><div class="barra-label"><span>${s}</span><span>${q}</span></div><div class="barra-bg"><div class="barra-fill" style="width:${Math.round(q/max*100)}%"></div></div></div>`).join('');
+  }
+
+  function salvarNC() {
+    const titulo = document.getElementById('nc-titulo').value;
+    const setor = document.getElementById('nc-setor').value;
+    const prioridade = document.getElementById('nc-prioridade').value;
+    const descricao = document.getElementById('nc-descricao').value;
+    if(!titulo||!setor||!prioridade) return alert('Preencha título, setor e prioridade!');
+    contadorNC++;
+    const id = 'nc-'+contadorNC;
+    const agora = new Date();
+    const dh = agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    chamados.push({id,titulo,setor,prioridade,status:'aberta'});
+    const lp={alta:'🔴 Alta',media:'🟡 Média',baixa:'🟢 Baixa'};
+    const card = document.createElement('div');
+    card.className=`card borda-${prioridade}`;card.id=id;
+    card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;"><strong>${titulo}</strong><div><span class="badge aberta" id="badge-${id}">Aberta</span><span class="prioridade ${prioridade}">${lp[prioridade]}</span></div></div>
+      <p>Setor: ${setor}</p><p>${descricao}</p><p style="font-size:10px;color:#bbb;">🕐 ${dh}</p>
+      <div style="margin-top:8px;"><button class="btn-fechar" id="btn-${id}" onclick="fecharChamado('${id}')">✔ Fechar</button></div>
+      <div class="assinatura-box" id="assin-box-${id}"><p style="font-size:11px;color:#666;margin-bottom:4px;">✍️ Assinatura:</p><input type="text" id="assin-nome-${id}" placeholder="Seu nome"><button onclick="assinar('${id}')">Confirmar</button></div>
+      <div id="assin-registrada-${id}"></div>`;
+    document.getElementById('lista-nc').appendChild(card);
+    document.getElementById('nc-titulo').value='';
+    document.getElementById('nc-setor').value='';
+    document.getElementById('nc-prioridade').value='';
+    document.getElementById('nc-descricao').value='';
+  }
+
+  function fecharChamado(id) {
+    document.getElementById('badge-'+id).textContent='Resolvida';
+    document.getElementById('badge-'+id).className='badge resolvida';
+    const btn=document.getElementById('btn-'+id);
+    btn.textContent='✔ Encerrado';btn.disabled=true;
+    const c=chamados.find(x=>x.id===id);if(c)c.status='resolvida';
+  }
+
+  function assinar(id) {
+    const nome=document.getElementById('assin-nome-'+id).value.trim();
+    if(!nome) return alert('Digite seu nome!');
+    const agora=new Date();
+    const dh=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('assin-box-'+id).style.display='none';
+    document.getElementById('assin-registrada-'+id).innerHTML=`<div class="assinatura-registrada">✅ <strong>${nome}</strong> — ${dh}</div>`;
+  }
+
+  function marcar(id){document.getElementById(id).classList.toggle('ok');}
+
+  function finalizarChecklist(){
+    const total=document.querySelectorAll('.checklist-item').length;
+    const ok=document.querySelectorAll('.checklist-item.ok').length;
+    document.getElementById('resultado-checklist').textContent=`✅ ${ok} de ${total} itens concluídos.`;
+  }
+
+  function salvarSal(){
+    const f=document.getElementById('sal-fornecedor').value.trim();
+    const d=document.getElementById('sal-data').value;
+    if(!f||!d) return alert('Preencha fornecedor e data!');
+    totalSal++;
+    document.getElementById('sal-vazio').style.display='none';
+    const card=document.createElement('div');card.className='rec-card sal';
+    card.innerHTML=`<strong>🧂 ${f}</strong><p>📅 ${new Date(d+'T00:00:00').toLocaleDateString('pt-BR')} | NF: ${document.getElementById('sal-nf').value||'-'} | Placa: ${document.getElementById('sal-placa').value||'-'}</p><p style="font-size:10px;color:#bbb;">Registrado em ${new Date().toLocaleDateString('pt-BR')}</p>`;
+    document.getElementById('lista-sal').appendChild(card);
+    toggleForm('form-sal');
+  }
+
+  function salvarMP(){
+    const f=document.getElementById('mp-fornecedor').value.trim();
+    const d=document.getElementById('mp-data-rec').value;
+    if(!f||!d) return alert('Preencha fornecedor e data!');
+    totalMP++;
+    document.getElementById('mp-vazio').style.display='none';
+    const card=document.createElement('div');card.className='rec-card mp';
+    card.innerHTML=`<strong>🥩 ${f}</strong><p>📅 ${new Date(d+'T00:00:00').toLocaleDateString('pt-BR')} | NF: ${document.getElementById('mp-nf').value||'-'} | Placa: ${document.getElementById('mp-placa').value||'-'}</p><p>Peso: ${document.getElementById('mp-peso-liq').value||'-'} kg | SIF: ${document.getElementById('mp-sif').value||'-'}</p><p style="font-size:10px;color:#bbb;">Registrado em ${new Date().toLocaleDateString('pt-BR')}</p>`;
+    document.getElementById('lista-mp').appendChild(card);
+    toggleForm('form-mp');
+  }
+
+  function salvarEmb(){
+    const fab=document.getElementById('emb-fab1').value.trim();
+    if(!fab) return alert('Preencha o campo FAB!');
+    totalEmb++;
+    document.getElementById('emb-vazio').style.display='none';
+    const agora=new Date();
+    const card=document.createElement('div');card.className='rec-card emb';
+    card.innerHTML=`<strong>📦 Embalagem Primária — ${agora.toLocaleDateString('pt-BR')}</strong><p>FAB Paineira: ${fab} | FAB Marca Própria: ${document.getElementById('emb-fab2').value||'-'}</p><p>Responsável: ${document.getElementById('emb-assin1').value||'-'} | Supervisor: ${document.getElementById('emb-assin2').value||'-'}</p><p style="font-size:10px;color:#bbb;">Registrado às ${agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</p>`;
+    document.getElementById('lista-emb').appendChild(card);
+    toggleForm('form-emb');
+  }
+
+  function salvarNCE(){
+    const data=document.getElementById('nce-data').value;
+    const hora=document.getElementById('nce-hora').value;
+    const nc=document.getElementById('nce-nc').value.trim();
+    const acao=document.getElementById('nce-acao').value.trim();
+    const assin=document.getElementById('nce-assin').value.trim();
+    if(!nc||!acao) return alert('Preencha a não conformidade e a ação corretiva!');
+    contadorOcorrencia++;
+    const numOc = String(contadorOcorrencia).padStart(4,'0');
+    document.getElementById('nce-vazio').style.display='none';
+    const card=document.createElement('div');card.className='ocorrencia-card';
+    card.innerHTML=`<span class="num-ocorrencia">Nº OCORRÊNCIA: ${numOc}</span>
+      <div class="row col2" style="margin-bottom:6px;">
+        <p><strong>Data:</strong> ${data ? new Date(data+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+        <p><strong>Hora:</strong> ${hora||'-'}</p>
+      </div>
+      <p style="font-size:12px;margin-bottom:4px;"><strong>Não Conformidade:</strong></p>
+      <p style="font-size:12px;color:#555;margin-bottom:8px;">${nc}</p>
+      <p style="font-size:12px;margin-bottom:4px;"><strong>Ação Corretiva:</strong></p>
+      <p style="font-size:12px;color:#555;margin-bottom:8px;">${acao}</p>
+      <p style="font-size:11px;color:#2e7d32;">✍️ Assinatura: <strong>${assin||'Não informada'}</strong></p>`;
+    document.getElementById('lista-nce').appendChild(card);
+    document.getElementById('nce-data').value='';
+    document.getElementById('nce-hora').value='';
+    document.getElementById('nce-nc').value='';
+    document.getElementById('nce-acao').value='';
+    document.getElementById('nce-assin').value='';
+    toggleForm('form-nce');
+  }
+</script>
+</body>
+</html>
